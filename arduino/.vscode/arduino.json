@@ -1,0 +1,7 @@
+{
+    "sketch": "arduino.ino",
+    "configuration": "cpu=atmega328",
+    "board": "arduino:avr:nano",
+    "output": "../build",
+    "port": "/dev/tty.usbserial-210"
+}
