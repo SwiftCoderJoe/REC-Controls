@@ -4,9 +4,9 @@ const int ESTOP_NORMALLY_CLOSED = 7;
 const int ESTOP_NORMALLY_OPEN = 8;
 
 /* CONTROL PANEL INPUTS */
-const int BEGIN_SIGNAL = 9;
-const int END_SIGNAL = 10;
-const int ESTOP_RESET_SIGNAL = 11;
+const int BEGIN_SIGNAL = 12;
+const int END_SIGNAL = 11;
+const int ESTOP_RESET_SIGNAL = 10;
 
 /* MOTORS */
 const int BASE_ROTATION_MOTOR_PWM = 3;
@@ -16,7 +16,7 @@ const int LINEAR_ACTUATOR_DIR_ONE = 4;  // Accurate as of 3/20
 const int LINEAR_ACTUATOR_DIR_TWO = 6;  // Accurate as of 3/20
 
 /* OTHER OUTPUTS */
-const int ESTOP_TRIGGERED_INDICATOR = 12;
+const int ESTOP_TRIGGERED_INDICATOR = 9;
 const int READY_INDICATOR = 13;
 const int ENABLE_LIGHTING = 14;
 
@@ -124,6 +124,7 @@ void writeMotorSpeeds() {
 void writeLighting() {
   digitalWrite(ENABLE_LIGHTING, lightingEnabled ? HIGH : LOW);
   digitalWrite(READY_INDICATOR, readyIndicator ? HIGH : LOW);
+  digitalWrite(LED_BUILTIN, readyIndicator ? HIGH : LOW);
   digitalWrite(ESTOP_TRIGGERED_INDICATOR, estopTriggeredIndicator ? HIGH : LOW);
 }
 
@@ -206,14 +207,20 @@ void runStandard() {
     baseRotationMotorSpeed = 0;
     upperRotationMotorSpeed = 0;
   } else if (elapsedTime < 8000) {
-    baseRotationMotorSpeed = (elapsedTime - 3000) / 19;
+    baseRotationMotorSpeed = min(255, (elapsedTime - 3000) / 19);
+    upperRotationMotorSpeed = 0;
   } else if (elapsedTime < 13000) {
-    baseRotationMotorSpeed = 255 - (elapsedTime - 8000) / 19;
+    baseRotationMotorSpeed = max(0, 255 - (elapsedTime - 8000) / 19);
+    upperRotationMotorSpeed = 0;
   } else if (elapsedTime < 18000) {
-    upperRotationMotorSpeed = (elapsedTime - 13000) / 19;
+    baseRotationMotorSpeed = 0;
+    upperRotationMotorSpeed = min(255, (elapsedTime - 13000) / 19);
   } else if (elapsedTime < 23000) {
-    baseRotationMotorSpeed = 255 - (elapsedTime - 18000) / 19;
+    baseRotationMotorSpeed = 0;
+    upperRotationMotorSpeed = max(0, 255 - (elapsedTime - 18000) / 19);
   } else {
+    baseRotationMotorSpeed = 0;
+    upperRotationMotorSpeed = 0;
     state = windingDown;
   }
 
