@@ -118,7 +118,7 @@ void writeMotorSpeeds() {
 
   analogWrite(UPPER_ROTATION_MOTOR_PWM, upperRotationMotorSpeed);
   analogWrite(BASE_ROTATION_MOTOR_PWM, baseRotationMotorSpeed);
-  analogWrite(LINEAR_ACTUATOR_PWM, baseRotationMotorSpeed);
+  analogWrite(LINEAR_ACTUATOR_PWM, linearActuatorSpeed);
 }
 
 void writeLighting() {
@@ -218,9 +218,16 @@ void runStandard() {
   } else if (elapsedTime < 23000) {
     baseRotationMotorSpeed = 0;
     upperRotationMotorSpeed = max(0, 255 - (elapsedTime - 18000) / 19);
+  } else if (elapsedTime < 28000) {
+    linearActuatorDirection = up;
+    linearActuatorSpeed = 255;
+  } else if (elapsedTime < 32000) {
+    linearActuatorDirection = down;
+    linearActuatorSpeed = 255;
   } else {
     baseRotationMotorSpeed = 0;
     upperRotationMotorSpeed = 0;
+    linearActuatorSpeed = 0;
     state = windingDown;
   }
 
@@ -234,13 +241,15 @@ void windDown() {
     lastState = windingDown;
   }
 
-  if ((baseRotationMotorSpeed != 0 || upperRotationMotorSpeed != 0) && millis() - lastWindDownMotorTick > 50) {
+  bool shouldWindDownMotors = (baseRotationMotorSpeed != 0 || upperRotationMotorSpeed != 0) && millis() - lastWindDownMotorTick > 50;
+  if (shouldWindDownMotors) {
     lastWindDownMotorTick = millis();
     baseRotationMotorSpeed = max(0, baseRotationMotorSpeed - 1);
     baseRotationMotorSpeed = max(0, upperRotationMotorSpeed - 1);
   }
 
-  if (linearActuatorPosition != 0) {
+  bool shouldWindDownActuator = linearActuatorPosition != 0;
+  if (shouldWindDownActuator) {
     if (!linearActuatorReturnBegan) {
       linearActuatorLastRunTime = millis();
       linearActuatorDirection = down;
@@ -253,5 +262,9 @@ void windDown() {
       linearActuatorReturnBegan = false;
       linearActuatorSpeed = 0;
     }
+  }
+
+  if (!shouldWindDownMotors && !shouldWindDownActuator) {
+    state = ready;
   }
 }
