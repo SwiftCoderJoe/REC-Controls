@@ -108,7 +108,7 @@ void checkForEStop() {
 }
 
 void writeMotorSpeeds() {
-  if (linearActuatorDirection = up) {
+  if (linearActuatorDirection == up) {
     digitalWrite(LINEAR_ACTUATOR_DIR_ONE, HIGH);
     digitalWrite(LINEAR_ACTUATOR_DIR_TWO, LOW);
   } else {
