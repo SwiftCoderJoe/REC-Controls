@@ -49,6 +49,32 @@ bool lightingEnabled = false;
 bool readyIndicator = false;
 bool estopTriggeredIndicator = false;
 
+/* RIDE PROFILE STATE MACHINE */
+enum ProfileState {
+  spinUp, // offsets rotation speed with base speed
+  spinUpBase,
+  spinUpRotation,
+  spinDown,
+  spinDownBase,
+  spinDownRotation,
+  liftHinge,
+  lowerHinge,
+  run,
+  done
+};
+
+struct RideProfile {
+  ProfileState states[20];
+  int timings[20];
+};
+
+constexpr RideProfile basicProfile = {
+  { spinUp, run, liftHinge, spinUpRotation, run, spinDownRotation, run, spinUpRotation, run, spinDownRotation, lowerHinge, spinDown, done },
+  { 5,      5,   10,        5,              15,  5,                10,  5,              10,  5,                10,         5,        1,   }
+};
+
+constexpr RideProfile activeProfile = basicProfile;
+
 void setup() {
   // initialize digital pin LED_BUILTIN as an output.
   pinMode(LED_BUILTIN, OUTPUT);
@@ -181,12 +207,14 @@ void runReady() {
   state = running;
 }
 
-int timeBegan = 0;
+int timeSwitched = 0;
+int rideState = 0;
 void runStandard() {
   if (lastState != state) {
     Serial.println("Beginning a ride cycle.");
     lastState = running;
-    timeBegan = millis();
+    timeSwitched = millis();
+    rideState = 0;
   }
 
   if (digitalRead(END_SIGNAL) == 1) {
@@ -194,41 +222,8 @@ void runStandard() {
     return;
   }
   
-  // this will be its own state machine at some point
-
-  int elapsedTime = millis() - timeBegan;
-  if (elapsedTime < 1000) {
-    baseRotationMotorSpeed = 255;
-    upperRotationMotorSpeed = 0;
-  } else if (elapsedTime < 2000) {
-    baseRotationMotorSpeed = 0;
-    upperRotationMotorSpeed = 255;
-  } else if (elapsedTime < 3000) {
-    baseRotationMotorSpeed = 0;
-    upperRotationMotorSpeed = 0;
-  } else if (elapsedTime < 8000) {
-    baseRotationMotorSpeed = min(255, (elapsedTime - 3000) / 19);
-    upperRotationMotorSpeed = 0;
-  } else if (elapsedTime < 13000) {
-    baseRotationMotorSpeed = max(0, 255 - (elapsedTime - 8000) / 19);
-    upperRotationMotorSpeed = 0;
-  } else if (elapsedTime < 18000) {
-    baseRotationMotorSpeed = 0;
-    upperRotationMotorSpeed = min(255, (elapsedTime - 13000) / 19);
-  } else if (elapsedTime < 23000) {
-    baseRotationMotorSpeed = 0;
-    upperRotationMotorSpeed = max(0, 255 - (elapsedTime - 18000) / 19);
-  } else if (elapsedTime < 28000) {
-    linearActuatorDirection = up;
-    linearActuatorSpeed = 255;
-  } else if (elapsedTime < 32000) {
-    linearActuatorDirection = down;
-    linearActuatorSpeed = 255;
-  } else {
-    baseRotationMotorSpeed = 0;
-    upperRotationMotorSpeed = 0;
-    linearActuatorSpeed = 0;
-    state = windingDown;
+  if (millis() - timeSwitched > activeProfile.timings[rideState] * 1000) {
+    rideState++;
   }
 
 }
