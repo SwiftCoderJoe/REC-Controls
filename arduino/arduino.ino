@@ -12,8 +12,8 @@ const int ESTOP_RESET_SIGNAL = 10;
 const int BASE_ROTATION_MOTOR_PWM = 3;
 const int UPPER_ROTATION_MOTOR_PWM = 5;
 const int LINEAR_ACTUATOR_PWM = 2;      // Accurate as of 3/20
-const int LINEAR_ACTUATOR_DIR_ONE = 4;  // Accurate as of 3/20
-const int LINEAR_ACTUATOR_DIR_TWO = 6;  // Accurate as of 3/20
+const int LINEAR_ACTUATOR_DIR_ONE = 6;  // Accurate as of 3/22
+const int LINEAR_ACTUATOR_DIR_TWO = 4;  // Accurate as of 3/22
 
 /* OTHER OUTPUTS */
 const int ESTOP_TRIGGERED_INDICATOR = 9;
