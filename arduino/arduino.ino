@@ -1,4 +1,3 @@
-
 /* E-STOP */
 const int ESTOP_NORMALLY_CLOSED = 12;
 const int ESTOP_NORMALLY_OPEN = 11;
@@ -70,7 +69,7 @@ struct RideProfile {
 
 constexpr RideProfile basicProfile = {
   { spinUp, liftHinge, spinUpRotation, run, spinDownRotation, run, spinUpRotation, run, spinDownRotation, lowerHinge, spinDown, done },
-  { 10,      10,       6,              10,  10,               5,  10,             10,  6,                10,         5,        1,   }
+  { 10,      10,       6,              10,  10,               5,   10,             10,  6,                10,         5,        1,   }
 };
 
 constexpr RideProfile activeProfile = basicProfile;
