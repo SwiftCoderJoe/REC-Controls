@@ -1,11 +1,11 @@
 
 /* E-STOP */
-const int ESTOP_NORMALLY_CLOSED = 7;
-const int ESTOP_NORMALLY_OPEN = 8;
+const int ESTOP_NORMALLY_CLOSED = 12;
+const int ESTOP_NORMALLY_OPEN = 11;
 
 /* CONTROL PANEL INPUTS */
-const int BEGIN_SIGNAL = 12;
-const int END_SIGNAL = 11;
+const int BEGIN_SIGNAL = 7;
+const int END_SIGNAL = 8;
 const int ESTOP_RESET_SIGNAL = 10;
 
 /* MOTORS */
@@ -240,7 +240,7 @@ void windDown() {
   if (shouldWindDownMotors) {
     lastWindDownMotorTick = millis();
     baseRotationMotorSpeed = max(0, baseRotationMotorSpeed - 1);
-    baseRotationMotorSpeed = max(0, upperRotationMotorSpeed - 1);
+    upperRotationMotorSpeed = max(0, upperRotationMotorSpeed - 1);
   }
 
   bool shouldWindDownActuator = linearActuatorPosition != 0;
