@@ -1,6 +1,6 @@
 /* E-STOP */
-const int ESTOP_NORMALLY_CLOSED = 12;
-const int ESTOP_NORMALLY_OPEN = 11;
+const int ESTOP_NORMALLY_HIGH = 11;
+const int ESTOP_NORMALLY_LOW = 12;
 
 /* CONTROL PANEL INPUTS */
 const int BEGIN_SIGNAL = 7;
@@ -8,8 +8,8 @@ const int END_SIGNAL = 8;
 const int ESTOP_RESET_SIGNAL = 10;
 
 /* MOTORS */
-const int BASE_ROTATION_MOTOR_PWM = 3;
-const int UPPER_ROTATION_MOTOR_PWM = 5;
+const int BASE_ROTATION_MOTOR_PWM = 5;
+const int UPPER_ROTATION_MOTOR_PWM = 3;
 const int LINEAR_ACTUATOR_PWM = 2;      // Accurate as of 3/20
 const int LINEAR_ACTUATOR_DIR_ONE = 6;  // Accurate as of 3/22
 const int LINEAR_ACTUATOR_DIR_TWO = 4;  // Accurate as of 3/22
@@ -78,8 +78,8 @@ void setup() {
   // initialize digital pin LED_BUILTIN as an output.
   pinMode(LED_BUILTIN, OUTPUT);
   
-  pinMode(ESTOP_NORMALLY_CLOSED, INPUT);
-  pinMode(ESTOP_NORMALLY_OPEN, INPUT);
+  pinMode(ESTOP_NORMALLY_LOW, INPUT);
+  pinMode(ESTOP_NORMALLY_HIGH, INPUT);
 
   pinMode(BEGIN_SIGNAL, INPUT);
   pinMode(END_SIGNAL, INPUT);
@@ -96,11 +96,12 @@ void setup() {
   pinMode(ENABLE_LIGHTING, OUTPUT);
 
   Serial.begin(115200);
+  Serial.println("Serial initialized.");
 }
 
 // the loop function runs over and over again forever
 void loop() {
-  checkForEStop();
+  // checkForEStop();
   writeMotorSpeeds();
   writeLighting();
   switch(state) {
@@ -115,7 +116,7 @@ void loop() {
 void checkForEStop() {
   if (state == emergencyStopped) { return; }
 
-  if (digitalRead(ESTOP_NORMALLY_CLOSED) == 1) {
+  if (digitalRead(ESTOP_NORMALLY_HIGH) == 0) {
     Serial.println("EMERGENCY: E-STOP NORMALLY CLOSED WAS DETECTED OPEN!");
     baseRotationMotorSpeed = 0;
     upperRotationMotorSpeed = 0;
@@ -123,7 +124,7 @@ void checkForEStop() {
     state = emergencyStopped;
   }
 
-  if (digitalRead(ESTOP_NORMALLY_OPEN) == 1) {
+  if (digitalRead(ESTOP_NORMALLY_LOW) == 1) {
     Serial.println("EMERGENCY: E-STOP NORMALLY OPEN WAS DETECTED CLOSED!");
     baseRotationMotorSpeed = 0;
     upperRotationMotorSpeed = 0;
@@ -134,11 +135,11 @@ void checkForEStop() {
 
 void writeMotorSpeeds() {
   if (linearActuatorDirection == up) {
-    digitalWrite(LINEAR_ACTUATOR_DIR_ONE, HIGH);
-    digitalWrite(LINEAR_ACTUATOR_DIR_TWO, LOW);
-  } else {
     digitalWrite(LINEAR_ACTUATOR_DIR_ONE, LOW);
     digitalWrite(LINEAR_ACTUATOR_DIR_TWO, HIGH);
+  } else {
+    digitalWrite(LINEAR_ACTUATOR_DIR_ONE, HIGH);
+    digitalWrite(LINEAR_ACTUATOR_DIR_TWO, LOW);
   }
 
   analogWrite(UPPER_ROTATION_MOTOR_PWM, upperRotationMotorSpeed);
@@ -159,7 +160,7 @@ void emergencyStop() {
     lastState = emergencyStopped;
   }
 
-  if (digitalRead(ESTOP_NORMALLY_CLOSED) == 1 || digitalRead(ESTOP_NORMALLY_OPEN) == 1) { return; }
+  if (digitalRead(ESTOP_NORMALLY_LOW) == 1 || digitalRead(ESTOP_NORMALLY_HIGH) == 0) { return; }
 
   if (digitalRead(ESTOP_RESET_SIGNAL) == 0) {
     estopResetBeginTime = -1;
