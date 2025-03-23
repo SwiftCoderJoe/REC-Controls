@@ -69,8 +69,8 @@ struct RideProfile {
 };
 
 constexpr RideProfile basicProfile = {
-  { spinUp, run, liftHinge, spinUpRotation, run, spinDownRotation, run, spinUpRotation, run, spinDownRotation, lowerHinge, spinDown, done },
-  { 5,      5,   10,        5,              15,  5,                10,  5,              10,  5,                10,         5,        1,   }
+  { spinUp, liftHinge, spinUpRotation, run, spinDownRotation, run, spinUpRotation, run, spinDownRotation, lowerHinge, spinDown, done },
+  { 10,      10,       6,              10,  10,               5,  10,             10,  6,                10,         5,        1,   }
 };
 
 constexpr RideProfile activeProfile = basicProfile;
@@ -210,22 +210,144 @@ void runReady() {
 int timeSwitched = 0;
 int rideState = 0;
 void runStandard() {
+  int currentTime = millis();
   if (lastState != state) {
     Serial.println("Beginning a ride cycle.");
     lastState = running;
-    timeSwitched = millis();
+    timeSwitched = currentTime;
     rideState = 0;
   }
 
+  // Update ride 
   if (digitalRead(END_SIGNAL) == 1) {
     state = windingDown;
     return;
   }
+
+  ProfileState currentOperationMode = activeProfile.states[rideState];
   
-  if (millis() - timeSwitched > activeProfile.timings[rideState] * 1000) {
+  // Update ride state
+  if (currentTime - timeSwitched > activeProfile.timings[rideState] * 1000) {
+    endOperationMode(currentOperationMode, currentTime);
+    timeSwitched = currentTime;
     rideState++;
+    currentOperationMode = activeProfile.states[rideState];
+    beginOperationMode(currentOperationMode, currentTime);
   }
 
+
+  runOperationMode(currentOperationMode, currentTime);
+
+}
+
+void beginOperationMode(ProfileState operationMode, int time) {
+  switch (operationMode) {
+  case spinUp:
+  case spinUpBase:
+  case spinUpRotation:
+    break;
+
+  case spinDown:
+  case spinDownBase:
+  case spinDownRotation:
+    break;
+
+  case liftHinge:
+    linearActuatorLastRunTime = time;
+    linearActuatorDirection = up;
+    linearActuatorSpeed = 255;
+    break;
+  case lowerHinge:
+    linearActuatorLastRunTime = time;
+    linearActuatorDirection = down;
+    linearActuatorSpeed = 255;
+    break;
+
+  case run:
+    break;
+  
+  case done:
+    break;
+  }
+}
+
+int lastMotorTick = -1;
+void runOperationMode(ProfileState operationMode, int time) {
+  switch (operationMode) {
+  case spinUp:
+    if (time - lastMotorTick > 40) {
+      lastMotorTick = time;
+      baseRotationMotorSpeed = constrain(baseRotationMotorSpeed + 1, 0, 255);
+      upperRotationMotorSpeed = constrain(upperRotationMotorSpeed + 1, 0, 128);
+    }
+    break;
+  case spinUpBase:
+    Serial.println("Unimplemented.");
+    break;
+  case spinUpRotation:
+    if (time - lastMotorTick > 40) {
+      lastMotorTick = time;
+      upperRotationMotorSpeed = constrain(upperRotationMotorSpeed + 1, 0, 255);
+    }
+    break;
+
+  case spinDown:
+    if (time - lastMotorTick > 40) {
+      lastMotorTick = time;
+      baseRotationMotorSpeed = constrain(baseRotationMotorSpeed - 1, 0, 255);
+      upperRotationMotorSpeed = constrain(upperRotationMotorSpeed - 1, 0, 128);
+    }
+    break;
+  case spinDownBase:
+    Serial.println("Unimplemented.");
+    break;
+  case spinDownRotation:
+    if (time - lastMotorTick > 40) {
+      lastMotorTick = time;
+      upperRotationMotorSpeed = constrain(upperRotationMotorSpeed - 1, 0, 255);
+    }
+    break;
+
+  case liftHinge:
+  case lowerHinge:
+    break;
+
+  case run:
+    break;
+  
+  case done:
+    state = windingDown;
+    break;
+  }
+}
+
+void endOperationMode(ProfileState operationMode, int time) {
+  switch (operationMode) {
+  case spinUp:
+  case spinUpBase:
+  case spinUpRotation:
+    break;
+
+  case spinDown:
+  case spinDownBase:
+  case spinDownRotation:
+    break;
+
+  case liftHinge:
+    linearActuatorPosition = linearActuatorPosition + (time - linearActuatorLastRunTime);
+    linearActuatorSpeed = 0;
+    break;
+  case lowerHinge:
+    linearActuatorPosition = max(0, linearActuatorPosition - (time - linearActuatorLastRunTime - 100));
+    linearActuatorSpeed = 0;
+    break;
+
+  case run:
+    break;
+  
+  case done:
+    break;
+  }
 }
 
 int lastWindDownMotorTick = 0;
