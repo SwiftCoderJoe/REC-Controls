@@ -1,6 +1,6 @@
 /* E-STOP */
 const int ESTOP_NORMALLY_HIGH = 11;
-const int ESTOP_NORMALLY_LOW = 12;
+// const int ESTOP_NORMALLY_LOW = 12; // Testing without second relay to microcontroller
 
 /* CONTROL PANEL INPUTS */
 const int BEGIN_SIGNAL = 7;
@@ -78,7 +78,7 @@ void setup() {
   // initialize digital pin LED_BUILTIN as an output.
   pinMode(LED_BUILTIN, OUTPUT);
   
-  pinMode(ESTOP_NORMALLY_LOW, INPUT);
+  //pinMode(ESTOP_NORMALLY_LOW, INPUT);
   pinMode(ESTOP_NORMALLY_HIGH, INPUT);
 
   pinMode(BEGIN_SIGNAL, INPUT);
@@ -101,7 +101,7 @@ void setup() {
 
 // the loop function runs over and over again forever
 void loop() {
-  // checkForEStop();
+  checkForEStop();
   writeMotorSpeeds();
   writeLighting();
   switch(state) {
@@ -124,13 +124,13 @@ void checkForEStop() {
     state = emergencyStopped;
   }
 
-  if (digitalRead(ESTOP_NORMALLY_LOW) == 1) {
-    Serial.println("EMERGENCY: E-STOP NORMALLY OPEN WAS DETECTED CLOSED!");
-    baseRotationMotorSpeed = 0;
-    upperRotationMotorSpeed = 0;
-    linearActuatorSpeed = 0;
-    state = emergencyStopped;
-  }
+  // if (digitalRead(ESTOP_NORMALLY_LOW) == 1) {
+  //   Serial.println("EMERGENCY: E-STOP NORMALLY OPEN WAS DETECTED CLOSED!");
+  //   baseRotationMotorSpeed = 0;
+  //   upperRotationMotorSpeed = 0;
+  //   linearActuatorSpeed = 0;
+  //   state = emergencyStopped;
+  // }
 }
 
 void writeMotorSpeeds() {
@@ -160,7 +160,8 @@ void emergencyStop() {
     lastState = emergencyStopped;
   }
 
-  if (digitalRead(ESTOP_NORMALLY_LOW) == 1 || digitalRead(ESTOP_NORMALLY_HIGH) == 0) { return; }
+// || digitalRead(ESTOP_NORMALLY_LOW) == 1
+  if (digitalRead(ESTOP_NORMALLY_HIGH) == 0) { return; }
 
   if (digitalRead(ESTOP_RESET_SIGNAL) == 0) {
     estopResetBeginTime = -1;
