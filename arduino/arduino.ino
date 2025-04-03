@@ -29,6 +29,7 @@ enum State {
 };
 State state = initializing;
 State lastState = emergencyStopped;
+bool contRun = false;
 
 /* ESTOP RESET VALUES */
 int estopResetBeginTime = -1;
@@ -111,6 +112,7 @@ void loop() {
     case running: runStandard(); break;
     case windingDown: windDown(); break;
   }
+  Serial.println(linearActuatorPosition);
 }
 
 void checkForEStop() {
@@ -122,6 +124,7 @@ void checkForEStop() {
     upperRotationMotorSpeed = 0;
     linearActuatorSpeed = 0;
     state = emergencyStopped;
+    contRun = false;
   }
 
   // if (digitalRead(ESTOP_NORMALLY_LOW) == 1) {
@@ -201,9 +204,10 @@ void runReady() {
     readyIndicator = true;
     lastState = ready;
   }
-  if (digitalRead(BEGIN_SIGNAL) == 0) { return; }
+  if (digitalRead(BEGIN_SIGNAL) == 0 && !contRun) { return; }
 
   Serial.println("Begin signal detected.");
+  contRun = true;
   readyIndicator = false;
   state = running;
 }
@@ -221,6 +225,7 @@ void runStandard() {
 
   // Update ride 
   if (digitalRead(END_SIGNAL) == 1) {
+    contRun = false;
     state = windingDown;
     return;
   }
@@ -351,7 +356,7 @@ void endOperationMode(ProfileState operationMode, int time) {
   }
 }
 
-int lastWindDownMotorTick = 0;
+long lastWindDownMotorTick = 0;
 bool linearActuatorReturnBegan = false;
 void windDown() {
   if (lastState != state) {
@@ -359,8 +364,12 @@ void windDown() {
     lastState = windingDown;
   }
 
-  bool shouldWindDownMotors = (baseRotationMotorSpeed != 0 || upperRotationMotorSpeed != 0) && millis() - lastWindDownMotorTick > 50;
-  if (shouldWindDownMotors) {
+  // Serial.println(baseRotationMotorSpeed);
+  // Serial.println(upperRotationMotorSpeed);
+  // Serial.println(millis() - lastWindDownMotorTick);
+
+  bool shouldWindDownMotors = (baseRotationMotorSpeed != 0 || upperRotationMotorSpeed != 0);
+  if (shouldWindDownMotors && millis() - lastWindDownMotorTick > 50) {
     lastWindDownMotorTick = millis();
     baseRotationMotorSpeed = max(0, baseRotationMotorSpeed - 1);
     upperRotationMotorSpeed = max(0, upperRotationMotorSpeed - 1);
