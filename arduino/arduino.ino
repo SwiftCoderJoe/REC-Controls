@@ -70,7 +70,7 @@ struct RideProfile {
 
 constexpr RideProfile basicProfile = {
   { spinUp, liftHinge, spinUpRotation, run, spinDownRotation, run, spinUpRotation, run, spinDownRotation, lowerHinge, spinDown, done },
-  { 10,      6,       6,              10,  10,               5,   10,             10,  6,                6,         5,        1,   }
+  { 10,     6,         6,              10,  10,               5,   10,             10,  6,                6,          5,        1,   }
 };
 
 constexpr RideProfile activeProfile = basicProfile;
