@@ -70,7 +70,7 @@ struct RideProfile {
 
 constexpr RideProfile basicProfile = {
   { spinUp, liftHinge, spinUpRotation, run, spinDownRotation, run, spinUpRotation, run, spinDownRotation, lowerHinge, spinDown, done },
-  { 10,      10,       6,              10,  10,               5,   10,             10,  6,                10,         5,        1,   }
+  { 10,      6,       6,              10,  10,               5,   10,             10,  6,                6,         5,        1,   }
 };
 
 constexpr RideProfile activeProfile = basicProfile;
@@ -112,7 +112,6 @@ void loop() {
     case running: runStandard(); break;
     case windingDown: windDown(); break;
   }
-  Serial.println(linearActuatorPosition);
 }
 
 void checkForEStop() {
@@ -362,6 +361,9 @@ void windDown() {
   if (lastState != state) {
     Serial.println("Beginning ride-wide wind down...");
     lastState = windingDown;
+    linearActuatorLastRunTime = millis();
+    linearActuatorDirection = down;
+    linearActuatorSpeed = 255;
   }
 
   // Serial.println(baseRotationMotorSpeed);
@@ -375,21 +377,23 @@ void windDown() {
     upperRotationMotorSpeed = max(0, upperRotationMotorSpeed - 1);
   }
 
-  bool shouldWindDownActuator = linearActuatorPosition != 0;
-  if (shouldWindDownActuator) {
-    if (!linearActuatorReturnBegan) {
-      linearActuatorLastRunTime = millis();
-      linearActuatorDirection = down;
-      linearActuatorSpeed = 255;
-      linearActuatorReturnBegan = true;
-    }
+  bool shouldWindDownActuator = millis() - linearActuatorLastRunTime < 10000;
 
-    if (linearActuatorPosition < millis() - linearActuatorLastRunTime - 1000) {
-      linearActuatorPosition = 0;
-      linearActuatorReturnBegan = false;
-      linearActuatorSpeed = 0;
-    }
-  }
+  // bool shouldWindDownActuator = linearActuatorPosition != 0;
+  // if (shouldWindDownActuator) {
+  //   if (!linearActuatorReturnBegan) {
+  //     linearActuatorLastRunTime = millis();
+  //     linearActuatorDirection = down;
+  //     linearActuatorSpeed = 255;
+  //     linearActuatorReturnBegan = true;
+  //   }
+
+  //   if (linearActuatorPosition < millis() - linearActuatorLastRunTime - 1000) {
+  //     linearActuatorPosition = 0;
+  //     linearActuatorReturnBegan = false;
+  //     linearActuatorSpeed = 0;
+  //   }
+  // }
 
   if (!shouldWindDownMotors && !shouldWindDownActuator) {
     state = ready;
