@@ -9,7 +9,7 @@ const int ESTOP_RESET_SIGNAL = 10;
 
 /* MOTORS */
 const int BASE_ROTATION_MOTOR_PWM = 5;  // Accurate as of 3/23
-const int UPPER_ROTATION_MOTOR_PWM = 3; // Accurate as of 3/23
+const int UPPER_ROTATION_MOTOR_PWM = 15; // WAS 3, DISABLED UPPER MOTOR USING INVALID PIN!
 const int LINEAR_ACTUATOR_PWM = 2;      // Accurate as of 3/23
 const int LINEAR_ACTUATOR_DIR_ONE = 6;  // Accurate as of 3/23
 const int LINEAR_ACTUATOR_DIR_TWO = 4;  // Accurate as of 3/23
@@ -70,10 +70,15 @@ struct RideProfile {
 
 constexpr RideProfile basicProfile = {
   { spinUp, liftHinge, spinUpRotation, run, spinDownRotation, run, spinUpRotation, run, spinDownRotation, lowerHinge, spinDown, done },
-  { 10,     6,         6,              10,  10,               5,   10,             10,  6,                6,          5,        1,   }
+  { 10,     6,         6,              10,  10,               2,   10,             10,  6,                6,          5,        1,   }
 };
 
-constexpr RideProfile activeProfile = basicProfile;
+constexpr RideProfile topOnlyProfile = {
+  { spinUp, liftHinge, run, lowerHinge, run, liftHinge, spinDown, run, spinUp, lowerHinge, spinDown, done },
+  { 10,     8,         10,  3,          10,  3,         5,        2,   5,      8,          6,        1,   }
+};
+
+constexpr RideProfile activeProfile = topOnlyProfile;
 
 void setup() {
   // initialize digital pin LED_BUILTIN as an output.
@@ -118,7 +123,7 @@ void checkForEStop() {
   if (state == emergencyStopped) { return; }
 
   if (digitalRead(ESTOP_NORMALLY_HIGH) == 0) {
-    Serial.println("EMERGENCY: E-STOP NORMALLY CLOSED WAS DETECTED OPEN!");
+    Serial.println("EMERGENCY: E-STOP NORMALLY HIGH WAS DETECTED LOW!");
     baseRotationMotorSpeed = 0;
     upperRotationMotorSpeed = 0;
     linearActuatorSpeed = 0;
@@ -290,14 +295,14 @@ void runOperationMode(ProfileState operationMode, int time) {
     Serial.println("Unimplemented.");
     break;
   case spinUpRotation:
-    if (time - lastMotorTick > 40) {
+    if (time - lastMotorTick > 30) {
       lastMotorTick = time;
       upperRotationMotorSpeed = constrain(upperRotationMotorSpeed + 1, 0, 255);
     }
     break;
 
   case spinDown:
-    if (time - lastMotorTick > 40) {
+    if (time - lastMotorTick > 30) {
       lastMotorTick = time;
       baseRotationMotorSpeed = constrain(baseRotationMotorSpeed - 1, 0, 255);
       upperRotationMotorSpeed = constrain(upperRotationMotorSpeed - 1, 0, 128);
@@ -396,6 +401,8 @@ void windDown() {
   // }
 
   if (!shouldWindDownMotors && !shouldWindDownActuator) {
+    timeSwitched = 0;
+    rideState = 0;
     state = ready;
   }
 }
